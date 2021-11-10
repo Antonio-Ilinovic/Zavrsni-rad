@@ -31,8 +31,8 @@ def reference_patch_close_to_positive_patch_more_than_m_from_negative(reference_
     # https://discuss.pytorch.org/t/dot-product-batch-wise/9746
     batch_size = reference_output.shape[0]
     # koristim view metodu kako bih pravilno posložio batcheve podataka i mogao napraviti dot product za batch podataka
-    dot_reference_positive = torch.bmm(reference_output.view(batch_size, 1, -1), positive_output.view(batch_size, -1, 1)).view(-1)
-    dot_reference_negative = torch.bmm(reference_output.view(batch_size, 1, -1), negative_output.view(batch_size, -1, 1)).view(-1)
+    dot_reference_positive = torch.sum(reference_output.view(batch_size, -1) * positive_output.view(batch_size, -1), axis=1)
+    dot_reference_negative = torch.sum(reference_output.view(batch_size, -1) * negative_output.view(batch_size, -1), axis=1)
 
     similarity_tensor = m + dot_reference_negative - dot_reference_positive
     # ova linija je ekvivalentna: max(0.0, vrijednost)
@@ -43,13 +43,16 @@ def reference_patch_close_to_positive_patch_more_than_m_from_negative(reference_
 
 num_epochs = 14
 criterion = reference_patch_close_to_positive_patch_more_than_m_from_negative
-learning_rate = 0.001
-optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
+lr_first_10_epochs = 0.001
+optimizer = torch.optim.Adam(params=model.parameters(), lr=lr_first_10_epochs)
 
 loss_list = []
 cost_list = []
 
 for epoch in range(num_epochs):
+    if epoch == 10:
+        optimizer.param_groups[0]['lr'] = 0.0001
+
     cost = 0.0
     print(f"epoch {epoch+1}/{num_epochs}")
 
