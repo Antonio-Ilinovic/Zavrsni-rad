@@ -2,22 +2,28 @@ import os
 
 import numpy as np
 import skimage
+import torch
 from matplotlib import image as mpimg
 
 
 def get_image_file_name_from_index(image_index):
+    # za zadani index dobivamo ime fajla. Npr za index 10, ime fajla je '000010_10.png'
+    # Popunjavaju se nule, tako da bude 6 znamenki u prefiksu.
     return str.zfill(str(image_index), 6) + "_10.png"
 
 
 def get_disp_image(image_index, disp_root='Kitti/stereo/disp_noc_0/'):
+    # metoda vraća mapu točnih dispariteta sa zadanim indexom, dimenzija (HxW)
     return skimage.util.img_as_ubyte(mpimg.imread(disp_root + get_image_file_name_from_index(image_index)))
 
 
 def get_left_image(image_index, left_root='Kitti/stereo/image_2/'):
+    # metoda vraća lijevu sliku sa zadanim indexom, dimenzija (HxWxC)
     return mpimg.imread(os.path.join(left_root, get_image_file_name_from_index(image_index)))
 
 
 def get_right_image(image_index, right_root='Kitti/stereo/image_3/'):
+    # metoda vraća desnu sliku sa zadanim indexom, dimenzija (HxWxC)
     return mpimg.imread(os.path.join(right_root, get_image_file_name_from_index(image_index)))
 
 
@@ -49,7 +55,8 @@ def get_filtered_disp(image_index, filter_distance=4):
     # izračunaj stupce za pozitivne primjere -> samo posmakni piksele za točan disparitet
     positive_cols = cols - disp_values
     # izračunaj stupce za negativne primjere -> posmakni piskele za točan disparitet i dodaj neki pomak, da bude netočan disparitet
-    negative_cols = positive_cols + np.random.choice([-8, -7, -6, -5, -4, 4, 5, 6, 7, 8], size=positive_cols.size).astype(np.uint16)
+    negative_cols = positive_cols + np.random.choice([-8, -7, -6, -5, -4, 4, 5, 6, 7, 8],
+                                                     size=positive_cols.size).astype(np.uint16)
 
     # izracunaj filter koje vrijednosti i koordinate dispariteta će se razmatrati
     filter_rows = (rows >= filter_distance) & (rows < disp_image.shape[0] - filter_distance)
@@ -68,7 +75,7 @@ def get_filtered_disp(image_index, filter_distance=4):
     result_dtype = np.dtype([('image_index', 'uint8'),
                              ('row', 'uint16'), ('col', 'uint16'),
                              ('col_positive', 'uint16'),
-                             ('col_negative', 'uint16'),])
+                             ('col_negative', 'uint16'), ])
     result_structured_array = np.empty(len(rows), dtype=result_dtype)
 
     result_structured_array['image_index'] = img_ids
@@ -81,9 +88,14 @@ def get_filtered_disp(image_index, filter_distance=4):
 
 
 def save_disp_data_of_all_images():
+    # metoda sprema u jedan numpy array sve podatke potrebne za učenje. Za svaku sliku stvara podatke o
+    # disparitetima i sve ih sprema u jedan ndarray. To se sprema u 'disp_data.npy' datoteku.
     disp_data_for_all_images = np.concatenate([get_filtered_disp(x) for x in range(180)])
     np.save('disp_data.npy', disp_data_for_all_images)
 
 
 def load_disp_data_of_all_images():
+    # učitavanje podataka za učenje. Učitava se ndarray 'disp_data.npy'
     return np.load('disp_data.npy')
+
+
