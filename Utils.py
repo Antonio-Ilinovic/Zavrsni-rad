@@ -12,17 +12,17 @@ def get_image_file_name_from_index(image_index):
     return str.zfill(str(image_index), 6) + "_10.png"
 
 
-def get_disp_image(image_index, disp_root='Kitti/stereo/disp_noc_0/'):
+def get_disp_image(image_index, disp_root='D:/ZAVRSNI/Kodovi/Kitti/stereo/disp_noc_0/'):
     # metoda vraća mapu točnih dispariteta sa zadanim indexom, dimenzija (HxW)
     return skimage.util.img_as_ubyte(mpimg.imread(disp_root + get_image_file_name_from_index(image_index)))
 
 
-def get_left_image(image_index, left_root='Kitti/stereo/image_2/'):
+def get_left_image(image_index, left_root='D:/ZAVRSNI/Kodovi/Kitti/stereo/image_2/'):
     # metoda vraća lijevu sliku sa zadanim indexom, dimenzija (HxWxC)
     return mpimg.imread(os.path.join(left_root, get_image_file_name_from_index(image_index)))
 
 
-def get_right_image(image_index, right_root='Kitti/stereo/image_3/'):
+def get_right_image(image_index, right_root='D:/ZAVRSNI/Kodovi/Kitti/stereo/image_3/'):
     # metoda vraća desnu sliku sa zadanim indexom, dimenzija (HxWxC)
     return mpimg.imread(os.path.join(right_root, get_image_file_name_from_index(image_index)))
 
@@ -96,6 +96,10 @@ def save_disp_data_of_all_images():
 
 def load_disp_data_of_all_images():
     # učitavanje podataka za učenje. Učitava se ndarray 'disp_data.npy'
-    return np.load('disp_data.npy')
+    return np.load('D:/ZAVRSNI/Kodovi/disp_data.npy')
 
 
+def load_model(path='D:/ZAVRSNI/Kodovi/trained_model.pth'):
+    model = torch.load(path)
+    model.eval()
+    return model

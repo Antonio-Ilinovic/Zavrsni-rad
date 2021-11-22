@@ -14,6 +14,7 @@ def calculate_accuracy(real_disp, predicted_disp):
     accuracy = np.zeros(real_disp.shape)
     accuracy[real_disp != 0] = -1
     accuracy[(real_disp != 0) & (np.abs(real_disp - predicted_disp) < 3)] = 1
+    return accuracy
 
 
 def plot_accuracy(accuracy):

@@ -1,19 +1,34 @@
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 
 from PatchesDataset import PatchesDataset
 from network import Conv64Features
 
+
+hyperparameters = {
+    'max_disp': 192,
+    'batch_size': 128,
+    'lr': 0.01,
+    'features': 64,
+    'ksize': 3,
+    'padding': 0,
+    'stem_strides': 1,
+    'margin': 0.2,
+    'epochs': 14,
+}
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(device)
 
 model = Conv64Features()
 model.to(device)
 
 patches_dataset = PatchesDataset()
-patches_train_loader = DataLoader(dataset=patches_dataset, batch_size=2048, shuffle=True)
+patches_train_loader = DataLoader(dataset=patches_dataset, batch_size=hyperparameters.get('batch_size'), shuffle=True)
 
 
-def reference_patch_close_to_positive_patch_more_than_m_from_negative(reference_output, positive_output, negative_output, m=2.0):
+def reference_patch_close_to_positive_patch_more_than_m_from_negative(reference_output, positive_output, negative_output, m=0.5):
     # parametri reference, positive i negative output su izlazi iz modela mreže.
     # Oni su vektori dimenzija (batch_size x 64)
 
@@ -41,25 +56,28 @@ def reference_patch_close_to_positive_patch_more_than_m_from_negative(reference_
     return similarity_tensor.sum()
 
 
-num_epochs = 14
-criterion = reference_patch_close_to_positive_patch_more_than_m_from_negative
-lr_first_10_epochs = 0.001
-optimizer = torch.optim.Adam(params=model.parameters(), lr=lr_first_10_epochs)
+#criterion = reference_patch_close_to_positive_patch_more_than_m_from_negative
+criterion = nn.TripletMarginLoss(margin=hyperparameters.get('margin'))
+optimizer = torch.optim.Adam(params=model.parameters(), lr=hyperparameters.get('lr'))
 
 loss_list = []
 cost_list = []
+BATCH_SIZE = hyperparameters.get('batch_size')
 
-for epoch in range(num_epochs):
+for epoch in range(hyperparameters.get('epochs')):
     if epoch == 10:
-        optimizer.param_groups[0]['lr'] = 0.0001
+        optimizer.param_groups[0]['lr'] = 0.001
 
     cost = 0.0
-    print(f"epoch {epoch+1}/{num_epochs}")
+    print(f"epoch {epoch+1}/{hyperparameters.get('epochs')}")
 
     count_batches = 0
+
+    model.train()
     for reference_patch, positive_patch, negative_patch in patches_train_loader:
-        # ove dvije linije su samo za printanje napretka epohe
-        print(2048*count_batches/16000000)
+        # ove linije su za printanje napretka epohe
+        if count_batches % 10 == 0:
+            print(BATCH_SIZE*count_batches/16000000)
         count_batches += 1
 
         reference_patch = reference_patch.to(device)
@@ -72,7 +90,12 @@ for epoch in range(num_epochs):
         positive_output = model(positive_patch)
         negative_output = model(negative_patch)
 
-        loss = criterion(reference_output, positive_output, negative_output)
+        current_batch_size = reference_output.size(0)
+
+        loss = criterion(
+            reference_output.view(current_batch_size, -1),
+            positive_output.view(current_batch_size, -1),
+            negative_output.view(current_batch_size, -1))
         loss.backward()
         optimizer.step()
         loss_list.append(loss.item())
@@ -80,6 +103,7 @@ for epoch in range(num_epochs):
 
     cost_list.append(cost)
     print(f" cost={cost}")
+    torch.save(model, f"trained_model_{epoch}.pth")
 
 # spremam istrenirani model za kasniju upotrebu
 torch.save(model, 'trained_model.pth')

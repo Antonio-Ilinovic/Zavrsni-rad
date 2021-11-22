@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class Conv64Features(nn.Module):
@@ -16,4 +17,5 @@ class Conv64Features(nn.Module):
         x = torch.relu(self.conv2(x))
         x = torch.relu(self.conv3(x))
         x = self.conv4(x)
+        x = F.normalize(x, dim=1)
         return x
