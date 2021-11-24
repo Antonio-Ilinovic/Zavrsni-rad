@@ -1,0 +1,8 @@
+Kitti/
+TrainingCheckpoint.py
+__pycache__/
+disp_data.npy
+testing/delete.ipynb
+trained_models/
+
+.idea/
