@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 import Utils
-import network
+import Network
 
 
 def transform_image_for_model(image):
@@ -33,7 +33,7 @@ def similarity_at_d(left_output, right_output, d):
     return np.sum(left_output * shifted_right_output, axis=2)
 
 
-def predict_disparity_map(image_num, model=network.Conv64Features(), D=100):
+def predict_disparity_map(image_num, model, max_disparity):
     # metoda vraća predikciju mape dispariteta
     model.to('cpu').eval()
     # dohvati slike
@@ -47,7 +47,7 @@ def predict_disparity_map(image_num, model=network.Conv64Features(), D=100):
     right_output = transform_model_output_to_ndarray(model(right_model_input))
 
     # ndarray[HxWxD]
-    similarities_at_all_D_disparities = np.stack([similarity_at_d(left_output, right_output, d) for d in range(D)], axis=2)
+    similarities_at_all_D_disparities = np.stack([similarity_at_d(left_output, right_output, d) for d in range(max_disparity)], axis=2)
 
     # ndarray[HxW]
     predicted_disparity_map = np.argmin(similarities_at_all_D_disparities, axis=2)
