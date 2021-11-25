@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
+import config
 from PatchesDataset import PatchesDataset
 from Network import Conv64Features
 
@@ -64,8 +65,9 @@ def train(hyperparameters, model, optimizer, criterion, device, dataloader_train
                 loss.backward()
                 # update optimizer parameters
                 optimizer.step()
+                # TODO nadodaj refaktoriranje train()
 
-    torch.save(model, 'trained_model.pth')
+    torch.save(model, config.TRAINED_MODEL_PATH)
 
 
 for epoch in range(hyperparameters.get('epochs')):

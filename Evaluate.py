@@ -3,6 +3,7 @@ import torch
 
 import Utils
 import Network
+import config
 
 
 def transform_image_for_model(image):
@@ -33,7 +34,7 @@ def similarity_at_d(left_output, right_output, d):
     return np.sum(left_output * shifted_right_output, axis=2)
 
 
-def predict_disparity_map(image_num, model, max_disparity):
+def predict_disparity_map(image_num, model, max_disparity=config.MAX_DISPARITY):
     # metoda vraća predikciju mape dispariteta
     model.to('cpu').eval()
     # dohvati slike
