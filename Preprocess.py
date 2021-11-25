@@ -6,14 +6,19 @@ import config
 
 def main():
     # program se pokreće na kraju datoteke
-    save_disparity_data_for_train_images()
+    save_disparity_data(train=True)
+    save_disparity_data(train=False)
 
 
-def save_disparity_data_for_train_images():
+def save_disparity_data(train=True):
     # metoda sprema u jedan numpy array sve podatke potrebne za učenje. Za svaku sliku stvara podatke o
     # disparitetima i sve ih sprema u jedan ndarray. To se sprema u 'disp_data.npy' datoteku.
-    disparity_data_for_train_images = np.concatenate([get_filtered_disparity_data(x) for x in range(config.NUM_TRAIN_IMAGES)])
-    np.save(config.DISPARITY_DATA_PATH, disparity_data_for_train_images)
+    disparity_data = np.concatenate(
+        [get_filtered_disparity_data(x) for x in
+         range(config.TRAIN_IMAGES_START_INDEX if train else config.VALIDATION_IMAGES_START_INDEX,
+               config.TRAIN_IMAGES_END_INDEX if train else config.VALIDATION_IMAGES_END_INDEX)])
+
+    np.save(config.TRAIN_DISPARITY_DATA_PATH if train else config.VALIDATION_DISPARITY_DATA_PATH, disparity_data)
 
 
 def get_filtered_disparity_data(image_index):
@@ -52,8 +57,10 @@ def get_filtered_disparity_data(image_index):
     # izracunaj filter koje vrijednosti i koordinate dispariteta će se razmatrati
     filter_rows = (rows >= filter_distance) & (rows < disparity_image.shape[0] - filter_distance)
     filter_cols = (cols >= filter_distance) & (cols < disparity_image.shape[1] - filter_distance)
-    filter_positive_cols = (positive_cols >= filter_distance) & (positive_cols < disparity_image.shape[1] - filter_distance)
-    filter_negative_cols = (negative_cols >= filter_distance) & (negative_cols < disparity_image.shape[1] - filter_distance)
+    filter_positive_cols = (positive_cols >= filter_distance) & (
+                positive_cols < disparity_image.shape[1] - filter_distance)
+    filter_negative_cols = (negative_cols >= filter_distance) & (
+                negative_cols < disparity_image.shape[1] - filter_distance)
     all_filters = filter_rows & filter_cols & filter_positive_cols & filter_negative_cols
 
     rows = rows[all_filters]

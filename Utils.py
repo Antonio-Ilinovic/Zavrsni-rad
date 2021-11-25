@@ -29,9 +29,14 @@ def get_right_image(image_index, right_root='D:/ZAVRSNI/Kodovi/Kitti/stereo/imag
     return mpimg.imread(config.RIGHT_IMAGE_ROOT_PATH + get_image_file_name_from_index(image_index))
 
 
-def load_train_disparity_data():
-    # učitavanje podataka za učenje. Učitava se ndarray 'disp_data.npy'
-    return np.load(config.DISPARITY_DATA_PATH)
+def load_disparity_data(train=True):
+    """
+    Učitavanje podataka iz spremljenog numpy arraya potrebnih za učitavanje okana.
+    Ovisno o parametru train učitavaju se ili podaci za treniranje ili za validaciju.
+    :param train: ako True, učitavaju se podaci za treniranje, inače za validaciju
+    :return:
+    """
+    return np.load(config.TRAIN_DISPARITY_DATA_PATH if train else config.VALIDATION_DISPARITY_DATA_PATH)
 
 
 def load_model(path=config.TRAINED_MODEL_PATH):

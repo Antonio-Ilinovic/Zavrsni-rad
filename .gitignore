@@ -1,5 +1,5 @@
 .idea/
 Kitti/
 __pycache__/
-disp_data.npy
+disparity_data.npy.npy
 trained_models/
