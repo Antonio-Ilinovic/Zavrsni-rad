@@ -17,8 +17,8 @@ class Conv64Features(nn.Module):
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = self.conv4(x)
-        # izlazi se normiraju na jedinični vektor po dimneziji značajki.
+        # dimenzije 2 i 3 su veličine 1, pa ih možemo ukloniti pomoću squeeze()
+        x = x.squeeze(3).squeeze(2)
+        # izlazi se normiraju na jedinični vektor po dimneziji značajki. Zboj kvadrata značajki je 1
         x = F.normalize(x, p=2, dim=1)
-        # da bi provjerili da je norma = 1:
-        # torch.norm(x[0].view(64))
         return x

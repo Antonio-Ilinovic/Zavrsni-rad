@@ -3,6 +3,7 @@ import os
 import numpy as np
 import skimage
 import torch
+import matplotlib.pyplot as plt
 from matplotlib import image as mpimg
 
 import config
@@ -24,7 +25,7 @@ def get_left_image(image_index):
     return mpimg.imread(config.LEFT_IMAGE_ROOT_PATH + get_image_file_name_from_index(image_index))
 
 
-def get_right_image(image_index, right_root='D:/ZAVRSNI/Kodovi/Kitti/stereo/image_3/'):
+def get_right_image(image_index):
     # metoda vraća desnu sliku sa zadanim indexom, dimenzija (HxWxC)
     return mpimg.imread(config.RIGHT_IMAGE_ROOT_PATH + get_image_file_name_from_index(image_index))
 

@@ -1,17 +1,14 @@
 from torch.utils.data import Dataset
-from torchvision.transforms import Compose, ToTensor, Lambda
+from torchvision.transforms import ToTensor
 
 import Utils
 import config
 
 
 class PatchesDataset(Dataset):
-    def __init__(self, train=True,
-                 transform=Compose([
-                     ToTensor,
-                     Lambda(lambda patch: patch.permute(2, 0, 1))
-                 ])):
 
+    def __init__(self, train=True, transform=ToTensor()):
+        # Implementation of ToTensor() automatically permutes image from (H x W x C) -> (C x H x W)
         self.transform = transform
         self.disparity_data = Utils.load_disparity_data(train=train)
         self.len = self.disparity_data.size
