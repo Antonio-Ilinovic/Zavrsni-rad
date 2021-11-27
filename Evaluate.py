@@ -4,6 +4,7 @@ import torch
 import Utils
 import Network
 import config
+from torchvision.transforms import ToTensor
 
 
 def transform_image_for_model(image):
@@ -12,8 +13,7 @@ def transform_image_for_model(image):
     # metoda prima jednu sliku (koja se učitava pomoću Utils.get_left/right_image) i pretvara je u tensor.
     # Također sliku oblika HxWxC pretvara u BxCxHxW (H=height, W=width, C=channel, B=batch_size)
     # Model očekuje takav oblika podataka na ulazu.
-    image_for_model = torch.as_tensor(image).detach().permute(2, 0, 1).unsqueeze(0)
-    return image_for_model
+    return ToTensor()(image).unsqueeze(0)
 
 
 def transform_model_output_to_ndarray(model_output):
@@ -37,7 +37,6 @@ def similarity_at_d(left_output, right_output, d):
 def predict_disparity_map(image_num, model, max_disparity=config.MAX_DISPARITY):
     # metoda vraća predikciju mape dispariteta
     model.to('cpu').eval()
-    # dohvati slike
     left = Utils.get_left_image(image_num)
     right = Utils.get_right_image(image_num)
     # pretvori slike za ulaz u model
@@ -52,6 +51,8 @@ def predict_disparity_map(image_num, model, max_disparity=config.MAX_DISPARITY):
 
     # ndarray[HxW]
     predicted_disparity_map = np.argmin(similarities_at_all_D_disparities, axis=2)
+    # dopuni sa nulama da ostane iste dimenzije
+    predicted_disparity_map = np.pad(predicted_disparity_map, pad_width=config.PATCH_SIZE // 2)
     return predicted_disparity_map
 
 
