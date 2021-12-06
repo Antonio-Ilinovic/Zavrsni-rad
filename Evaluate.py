@@ -56,7 +56,6 @@ def predict_disparity_map(image_num, model, max_disparity=config.MAX_DISPARITY):
     similarities_at_all_D_disparities = np.stack([similarity_at_d(left_output, right_output, d) for d in range(max_disparity)], axis=2)
 
     # ndarray[HxW]
-    # TODO changed to argmax
     predicted_disparity_map = np.argmax(similarities_at_all_D_disparities, axis=2)
 
     return predicted_disparity_map
