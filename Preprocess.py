@@ -1,13 +1,36 @@
 import numpy as np
+import torch
+import torchvision.datasets
+from torch.utils.data import DataLoader
 
 import Utils
 import config
+from torchvision import transforms
 
 
 def main():
     # program se pokreće na kraju datoteke
-    save_disparity_data(train=True)
-    save_disparity_data(train=False)
+    ##### save_disparity_data(train=True)
+    ##### save_disparity_data(train=False)
+    #mean, std = get_mean_and_std() # mean = tensor([0.4819, 0.5089, 0.5009]), std = tensor([0.3106, 0.3247, 0.3347])
+    mean, std = torch.tensor([0.4819, 0.5089, 0.5009]), torch.tensor([0.3106, 0.3247, 0.3347])
+    print(f"mean = {mean}, std = {std}")
+
+
+def get_mean_and_std():
+    transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(256),
+        transforms.ToTensor()
+    ])
+
+    not_normalized_images_data = torchvision.datasets.ImageFolder(root=config.NOT_NORMALIZED_IMAGES_PATH, transform=transform)
+
+    not_normalized_images_data_loader = DataLoader(not_normalized_images_data, batch_size=len(not_normalized_images_data), shuffle=False, num_workers=0)
+    not_normalized_images, _ = next(iter(not_normalized_images_data_loader))
+
+    mean, std = not_normalized_images.mean([0, 2, 3]), not_normalized_images.std([0, 2, 3])
+    return mean, std
 
 
 def save_disparity_data(train=True):

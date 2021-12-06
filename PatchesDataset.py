@@ -1,5 +1,5 @@
 from torch.utils.data import Dataset
-from torchvision.transforms import ToTensor
+from torchvision import transforms
 
 import Utils
 import config
@@ -7,7 +7,11 @@ import config
 
 class PatchesDataset(Dataset):
 
-    def __init__(self, train=True, transform=ToTensor()):
+    def __init__(self, train=True, transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4819, 0.5089, 0.5009), (0.3106, 0.3247, 0.3347))
+    ])):
+
         # Implementation of ToTensor() automatically permutes image from (H x W x C) -> (C x H x W)
         self.transform = transform
         self.disparity_data = Utils.load_disparity_data(train=train)
