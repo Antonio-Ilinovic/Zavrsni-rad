@@ -1,25 +1,86 @@
+import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from torch import nn
 from torch.utils.data import DataLoader
 
 import config
+import hyperparameters
 from PatchesDataset import PatchesDataset
 from Network import Conv64Features
 
 
-if __name__ == '__main__':
+def set_learning_rate(optimizer, epoch):
+    if epoch == hyperparameters.LR_CHANGE_AT_EPOCH:
+        for param in optimizer.param_groups:
+            param['lr'] = hyperparameters.LR_AFTER_10_EPOCHS
 
-    hyperparameters = {
-        'MAX_DISP': 192,
-        'BATCH_SIZE': 128,
-        'LR': 0.001,
-        'FEATURES': 64,
-        'KSIZE': 3,
-        'PADDING': 0,
-        'STEM_STRIDES': 1,
-        'MARGIN': 0.2,
-        'EPOCHS': 14,
-    }
+
+class TrainInfo:
+    def __init__(self):
+        self.train_loss_per_epoch = np.zeros((hyperparameters.EPOCHS, ))
+        self.validation_loss_per_epoch = np.zeros((hyperparameters.EPOCHS, ))
+
+    def set_train_loss(self, epoch, loss):
+        self.train_loss_per_epoch[epoch] = loss
+
+    def set_validation_loss(self, epoch, loss):
+        self.validation_loss_per_epoch[epoch] = loss
+
+    def save_train_loss(self):
+        np.save("train_loss_per_epoch.npy", self.train_loss_per_epoch)
+
+    def save_validation_loss(self):
+        np.save("validation_loss_per_epoch.npy", self.validation_loss_per_epoch)
+
+
+def train(model, optimizer, criterion, device, train_loader, print_every=1000):
+
+    train_info = TrainInfo()
+    count_train_global_batches = 0
+
+    for epoch in range(hyperparameters.EPOCHS):
+        print(f"epoch {epoch + 1}/{hyperparameters.EPOCHS}")
+        set_learning_rate(optimizer, epoch)
+
+        count_batches_in_current_epoch = 0
+        loss_sum_in_current_epoch = 0.0
+
+        model.train()
+        for anchor_patch, positive_patch, negative_patch in train_loader:
+            count_train_global_batches += 1
+            count_batches_in_current_epoch += 1
+
+            anchor_patch = anchor_patch.to(device)
+            positive_patch = positive_patch.to(device)
+            negative_patch = negative_patch.to(device)
+
+            anchor_features = model(anchor_patch)
+            positive_features = model(positive_patch)
+            negative_features = model(negative_patch)
+
+            optimizer.zero_grad()
+            loss = criterion(anchor_features, positive_features, negative_features)
+            loss.backward()
+            optimizer.step()
+
+            loss_sum_in_current_epoch += loss.item()
+
+            if count_batches_in_current_epoch % print_every == 0:
+                print(f"{hyperparameters.BATCH_SIZE * count_batches_in_current_epoch / len(train_dataset):.3f}  "
+                      f"running_average_loss_in_current_epoch={loss_sum_in_current_epoch / count_batches_in_current_epoch:.3f} ")
+
+        # izračunaj average loss trenutne epohe
+        train_epoch_average_loss = loss_sum_in_current_epoch / count_batches_in_current_epoch
+        train_info.set_train_loss(epoch, train_epoch_average_loss)
+
+        torch.save(model, f"trained_model_{epoch}.pth")
+
+    # spremi average loss treninga i validacije u fajlove
+    train_info.save_train_loss()
+
+
+if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Training is done on: {device}")
@@ -27,87 +88,12 @@ if __name__ == '__main__':
     model = Conv64Features()
     model.to(device)
 
-    patches_dataset = PatchesDataset()
-    patches_train_loader = DataLoader(dataset=patches_dataset, batch_size=hyperparameters.get('BATCH_SIZE'), shuffle=True)
+    train_dataset = PatchesDataset(train=True)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=hyperparameters.BATCH_SIZE,
+                              shuffle=True, num_workers=4, pin_memory=True)
 
-    criterion = nn.TripletMarginLoss(margin=hyperparameters.get('margin'))
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=hyperparameters.get('lr'))
+    criterion = nn.TripletMarginLoss(margin=hyperparameters.MARGIN)
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=hyperparameters.LR)
 
-    loss_list = []
-    cost_list = []
-    BATCH_SIZE = hyperparameters.get('batch_size')
-
-
-def train(hyperparameters, model, optimizer, criterion, device, dataloader_train):
-    for epoch in range(hyperparameters.get('EPOCHS')):
-        try:
-            # epoch training
-            model.train()
-
-            for anchor_patch, positive_patch, negative_patch in dataloader_train:
-                # put patches data to device (GPU)
-                anchor_patch = anchor_patch.to(device)
-                positive_patch = positive_patch.to(device)
-                negative_patch = negative_patch.to(device)
-
-                optimizer.zero_grad()
-
-                # forward anchor, positive and negative patches through model
-                # and view it as a 2D vector of dimensions [BATCH_SIZE, NUMBER_OF_FEATURES]
-                model_forward = lambda patch : model(patch).view(patch.shape[0], -1)
-                anchor_model_output = model_forward(anchor_patch)
-                positive_model_output = model_forward(positive_patch)
-                negative_model_output = model_forward(negative_patch)
-
-                # calculate loss using loss function (torch.TripletMarginLoss)
-                loss = criterion(anchor_model_output, positive_model_output, negative_model_output)
-                # accumulate gradients
-                loss.backward()
-                # update optimizer parameters
-                optimizer.step()
-                # TODO nadodaj refaktoriranje train()
-
-    torch.save(model, config.TRAINED_MODEL_PATH)
-
-
-for epoch in range(hyperparameters.get('epochs')):
-    if epoch == 10:
-        optimizer.param_groups[0]['lr'] = 0.0001
-
-    cost = 0.0
-    print(f"epoch {epoch+1}/{hyperparameters.get('epochs')}")
-
-    count_batches = 0
-
-    model.train()
-    for reference_patch, positive_patch, negative_patch in patches_train_loader:
-        count_batches += 1
-
-        reference_patch = reference_patch.to(device)
-        positive_patch = positive_patch.to(device)
-        negative_patch = negative_patch.to(device)
-
-        optimizer.zero_grad()
-
-        reference_output = model(reference_patch)
-        positive_output = model(positive_patch)
-        negative_output = model(negative_patch)
-
-        current_batch_size = reference_output.size(0)
-
-        loss = criterion(
-            reference_output.view(current_batch_size, -1),
-            positive_output.view(current_batch_size, -1),
-            negative_output.view(current_batch_size, -1))
-        loss.backward()
-        optimizer.step()
-        #loss_list.append(loss.item())
-        cost += loss.item()
-
-        if count_batches % 1000 == 0:
-            print(f"{BATCH_SIZE * count_batches / 16000000}  loss={loss.item()}")
-
-    cost_list.append(cost)
-    print(f" cost={cost}")
-    torch.save(model, f"trained_model_{epoch}.pth")
+    train(model, optimizer, criterion, device, train_loader)
 
