@@ -3,3 +3,6 @@ Kitti/
 __pycache__/
 disparity_data.npy.npy
 trained_models/
+disparity_data/
+testing/
+trained_model*
