@@ -7,15 +7,15 @@ import Utils
 from Accuracy import plot_accuracy_image_with_image_index, calculate_accuracy_percentage
 
 
-model = torch.load('D:/ZAVRSNI/Zavrsni-rad/trained_model_13.pth')
-num_image = 199
+def evaluate_model(model):
+    train_accuracy = calculate_accuracy_percentage(model, train=True)
+    test_accuracy = calculate_accuracy_percentage(model, train=False)
+    print(f"train accuracy = {train_accuracy}\ntest accuracy = {test_accuracy}")
+    with open("model_evaluation.txt", "w") as f:
+        f.write(f"train accuracy = {train_accuracy}\ntest accuracy = {test_accuracy}")
 
 
-def show_end_result_of_trained_model(model, num_image):
-    # train_accuracy = calculate_accuracy_percentage(model, train=True)
-    # test_accuracy = calculate_accuracy_percentage(model, train=False)
-    # print(f"train accuracy = {train_accuracy}\ntest accuracy = {test_accuracy}")
-
+def evaluate_image_with_model(model, num_image):
     real_disparity = Utils.get_disp_image(num_image)
     plt.subplot(2, 1, 1)
     plt.imshow(real_disparity)
@@ -46,4 +46,13 @@ def show_end_result_of_trained_model(model, num_image):
     plt.show()
 
 
-show_end_result_of_trained_model(model, num_image)
+def plot_train_and_validation_loss_per_epoch(train_loss, validation_loss):
+    pass
+
+
+if __name__ == '__main__':
+    model = torch.load('trained_model_13.pth')
+    num_image = 199
+    #evaluate_image_with_model(model, num_image)
+    #evaluate_model(model)
+    Evaluate.save_validation_loss_per_epoch()

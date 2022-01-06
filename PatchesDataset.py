@@ -7,13 +7,19 @@ import config
 
 class PatchesDataset(Dataset):
 
-    def __init__(self, train=True, transform=transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4819, 0.5089, 0.5009), (0.3106, 0.3247, 0.3347))
-    ])):
+    def __init__(self, train=True):
+
+        color_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4819, 0.5089, 0.5009), (0.3106, 0.3247, 0.3347))
+        ])
+        grayscale_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4999), (0.3180))
+        ])
 
         # Implementation of ToTensor() automatically permutes image from (H x W x C) -> (C x H x W)
-        self.transform = transform
+        self.transform = grayscale_transform if config.IS_GRAYSCALE else color_transform
         self.disparity_data = Utils.load_disparity_data(train=train)
         self.len = self.disparity_data.size
         self.left_images = {}
@@ -55,6 +61,6 @@ class PatchesDataset(Dataset):
         col_from = col - patch_size // 2
         col_to = col_from + patch_size
 
-        patch = image[row_from:row_to, col_from:col_to, :]
+        patch = image[row_from:row_to, col_from:col_to]
         return patch
 

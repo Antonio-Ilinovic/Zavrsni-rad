@@ -22,12 +22,12 @@ def get_disp_image(image_index):
 
 def get_left_image(image_index):
     # metoda vraća lijevu sliku sa zadanim indexom, dimenzija (HxWxC)
-    return mpimg.imread(config.NOT_NORMALIZED_LEFT_IMAGE_ROOT_PATH + get_image_file_name_from_index(image_index))
+    return mpimg.imread((config.GRAYSCALE_LEFT_ROOT if config.IS_GRAYSCALE else config.COLOR_LEFT_ROOT) + get_image_file_name_from_index(image_index))
 
 
 def get_right_image(image_index):
     # metoda vraća desnu sliku sa zadanim indexom, dimenzija (HxWxC)
-    return mpimg.imread(config.NOT_NORMALIZED_RIGHT_IMAGE_ROOT_PATH + get_image_file_name_from_index(image_index))
+    return mpimg.imread((config.GRAYSCALE_RIGHT_ROOT if config.IS_GRAYSCALE else config.COLOR_RIGHT_ROOT) + get_image_file_name_from_index(image_index))
 
 
 def load_disparity_data(train=True):
