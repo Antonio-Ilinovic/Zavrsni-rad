@@ -31,7 +31,7 @@ class TrainInfo:
         np.save("train_loss_per_epoch.npy", self.train_loss_per_epoch)
 
     def save_validation_loss(self):
-        np.save("validation_loss_per_epoch.npy", self.validation_loss_per_epoch)
+        np.save("trained_models/grayscale_images/validation_loss_per_epoch.npy", self.validation_loss_per_epoch)
 
 
 def train(model, optimizer, criterion, device, train_loader, print_every=1000):
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Training is done on: {device}")
 
-    model = Conv64Features()
+    model = Conv64Features(in_channels=1)
     model.to(device)
 
     train_dataset = PatchesDataset(train=True)

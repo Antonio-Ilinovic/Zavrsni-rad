@@ -1,3 +1,4 @@
+from PIL import Image
 import numpy as np
 import torch
 import torchvision.datasets
@@ -12,9 +13,28 @@ def main():
     # program se pokreće na kraju datoteke
     ##### save_disparity_data(train=True)
     ##### save_disparity_data(train=False)
-    #mean, std = get_mean_and_std() # mean = tensor([0.4819, 0.5089, 0.5009]), std = tensor([0.3106, 0.3247, 0.3347])
-    mean, std = torch.tensor([0.4819, 0.5089, 0.5009]), torch.tensor([0.3106, 0.3247, 0.3347])
-    print(f"mean = {mean}, std = {std}")
+    ##### save_grayscale_images()
+    # mean, std = get_mean_and_std() # mean = tensor([0.4819, 0.5089, 0.5009]), std = tensor([0.3106, 0.3247, 0.3347])
+    # mean, std = torch.tensor([0.4819, 0.5089, 0.5009]), torch.tensor([0.3106, 0.3247, 0.3347])
+    # print(f"color images mean = {mean}, color images std = {std}")
+
+    # grayscale_mean, grayscale_std = get_mean_and_std(grayscale=True)
+    # grayscale_mean, grayscale_std = torch.tensor([0.4999]), torch.tensor([0.3180])
+    # print(f"grayscale images mean = {grayscale_mean}, grayscale images std = {grayscale_std}")
+
+    pass
+
+
+def save_grayscale_images():
+    def save_grayscale_image(image_index, is_left_image):
+        color_image_root = config.COLOR_LEFT_ROOT if is_left_image else config.COLOR_RIGHT_ROOT
+        grayscale_image_root = config.GRAYSCALE_LEFT_ROOT if is_left_image else config.GRAYSCALE_RIGHT_ROOT
+        Image.open(color_image_root + Utils.get_image_file_name_from_index(image_index)).convert("L").save(
+            grayscale_image_root + Utils.get_image_file_name_from_index(image_index))
+
+    for image_index in range(config.NUM_IMAGES):
+        save_grayscale_image(image_index, is_left_image=True)
+        save_grayscale_image(image_index, is_left_image=False)
 
 
 def get_mean_and_std():
@@ -23,10 +43,20 @@ def get_mean_and_std():
         transforms.CenterCrop(256),
         transforms.ToTensor()
     ])
+    grayscale_transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(256),
+        transforms.Grayscale(),
+        transforms.ToTensor()
+    ])
 
-    not_normalized_images_data = torchvision.datasets.ImageFolder(root=config.NOT_NORMALIZED_IMAGES_PATH, transform=transform)
+    not_normalized_images_data = torchvision.datasets.ImageFolder(
+        root=(config.GRAYSCALE_ROOT if config.IS_GRAYSCALE else config.COLOR_ROOT),
+        transform=(grayscale_transform if config.IS_GRAYSCALE else transform))
 
-    not_normalized_images_data_loader = DataLoader(not_normalized_images_data, batch_size=len(not_normalized_images_data), shuffle=False, num_workers=0)
+    not_normalized_images_data_loader = DataLoader(not_normalized_images_data,
+                                                   batch_size=len(not_normalized_images_data), shuffle=False,
+                                                   num_workers=0)
     not_normalized_images, _ = next(iter(not_normalized_images_data_loader))
 
     mean, std = not_normalized_images.mean([0, 2, 3]), not_normalized_images.std([0, 2, 3])
@@ -81,9 +111,9 @@ def get_filtered_disparity_data(image_index):
     filter_rows = (rows >= filter_distance) & (rows < disparity_image.shape[0] - filter_distance)
     filter_cols = (cols >= filter_distance) & (cols < disparity_image.shape[1] - filter_distance)
     filter_positive_cols = (positive_cols >= filter_distance) & (
-                positive_cols < disparity_image.shape[1] - filter_distance)
+            positive_cols < disparity_image.shape[1] - filter_distance)
     filter_negative_cols = (negative_cols >= filter_distance) & (
-                negative_cols < disparity_image.shape[1] - filter_distance)
+            negative_cols < disparity_image.shape[1] - filter_distance)
     all_filters = filter_rows & filter_cols & filter_positive_cols & filter_negative_cols
 
     rows = rows[all_filters]
