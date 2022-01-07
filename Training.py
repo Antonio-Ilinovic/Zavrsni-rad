@@ -88,7 +88,7 @@ if __name__ == '__main__':
     model = Conv64Features(in_channels=1)
     model.to(device)
 
-    train_dataset = PatchesDataset(train=True)
+    train_dataset = PatchesDataset(train=True, grayscale=True)
     train_loader = DataLoader(dataset=train_dataset, batch_size=hyperparameters.BATCH_SIZE,
                               shuffle=True, num_workers=4, pin_memory=True)
 
